@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>しりとりゲーム</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f9;
+        }
+        header {
+            text-align: center;
+            padding: 20px;
+            background-color: #4CAF50;
+            color: white;
+        }
+        .container {
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        input, button {
+            padding: 10px;
+            margin: 10px;
+            font-size: 16px;
+            width: 250px;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        #game-log {
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #e2e2e2;
+            border-radius: 5px;
+            width: 80%;
+            text-align: left;
+        }
+        .log-entry {
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>しりとりゲーム</h1>
+    </header>
+
+    <div class="container">
+        <textarea id="player-word" placeholder="あなたの単語を入力" rows="4" cols="50"></textarea><br>
+        <button onclick="startShiritori()">しりとり開始</button>
+        <div id="game-log"></div>
+    </div>
+
+    <script>
+        const apiKey = 'YOUR_GOOGLE_API_KEY';  // Google Cloud APIキーを設定
+
+        // ゲームの開始
+        function startShiritori() {
+            const playerWord = document.getElementById('player-word').value.trim();
+            if (!playerWord) {
+                alert("単語を入力してください！");
+                return;
+            }
+
+            addLog(`あなた: ${playerWord}`);
+            getNextWord(playerWord);
+        }
+
+        // 次の単語を選ぶためにGoogle Cloud Natural Language APIを使う
+        function getNextWord(playerWord) {
+            // ここでGoogle Cloud Translation APIまたはNatural Language APIを使って次の単語を決定
+            fetchTranslation(playerWord);
+        }
+
+        // Google Cloud Translation APIで翻訳して、次の単語を決定
+        async function fetchTranslation(word) {
+            const url = `https://translation.googleapis.com/language/translate/v2?key=${apiKey}`;
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    q: word,
+                    target: 'en'
+                })
+            });
+            const data = await response.json();
+            const translatedWord = data.data.translations[0].translatedText;
+            addLog(`AI（翻訳された単語）: ${translatedWord}`);
+            extractWordFromTranslation(translatedWord);
+        }
+
+        // 翻訳された単語から最後の文字を使って次の単語を選ぶ
+        async function extractWordFromTranslation(translatedWord) {
+            const lastChar = translatedWord.charAt(translatedWord.length - 1).toLowerCase();
+            addLog(`次の単語の始まりの文字: ${lastChar}`);
+            
+            // ここでは、簡単に英語の辞書から次の単語を選んでいます（例）
+            const nextWord = await getNextShiritoriWord(lastChar);
+            addLog(`AI（次の単語）: ${nextWord}`);
+        }
+
+        // 次の単語を英単語リストから選ぶ（簡易的な方法）
+        async function getNextShiritoriWord(lastChar) {
+            const words = ["apple", "elephant", "tiger", "rabbit", "table", "elephant"];  // 簡易な単語リスト
+            for (let word of words) {
+                if (word.toLowerCase().startsWith(lastChar)) {
+                    return word;
+                }
+            }
+            return "次の単語が見つかりませんでした";
+        }
+
+        // ログに結果を表示する
+        function addLog(message) {
+            const log = document.getElementById('game-log');
+            const logEntry = document.createElement('div');
+            logEntry.classList.add('log-entry');
+            logEntry.textContent = message;
+            log.appendChild(logEntry);
+        }
+    </script>
+</body>
+</html>
